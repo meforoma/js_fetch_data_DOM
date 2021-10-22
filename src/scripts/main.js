@@ -6,7 +6,7 @@ const BASE_URL = 'https://mate-academy.github.io/phone-catalogue-static'
 const DETAILS_URL = 'https://mate-academy.github.io/phone-catalogue-static'
   + '/api/phones/';
 
-// utility request
+// utility request => getPhones + getPhonesDetails
 function request(url) {
   return fetch(url)
     .then(response => {
@@ -20,44 +20,28 @@ function request(url) {
     });
 };
 
-// getPhones + details using utility request
 function getPhones() {
   return request(BASE_URL);
 };
 
-const getPhonesDetails = (ids) => {
-  ids.forEach(id => {
-    const record = `${DETAILS_URL}${id}.json`;
-
-    request(record);
-  });
+const getPhonesDetails = (phoneId) => {
+  return request(`${DETAILS_URL}${phoneId}.json`);
 };
 
-// service functions
-const getData = (result) => {
-  const idsNames = {};
-
-  result.forEach(element => {
-    idsNames[element.id] = element.name;
-  });
-
-  getPhonesDetails(Object.keys(idsNames));
-  display(Object.values(idsNames));
-};
-
-const display = (elements) => {
-  const select = document.createElement('SELECT');
-
-  elements.forEach(element => {
-    const option = document.createElement('option');
-
-    option.append(element);
-    select.append(option);
-  });
-
-  document.body.append(select);
-};
-
-// calling all above
+// getting an array of phones via Promise.all and display to the page
 getPhones()
-  .then(result => getData(result));
+  .then(arr => {
+    Promise.all([...arr.map(phone => getPhonesDetails(phone.id))])
+      .then(allPhones => {
+        const ul = document.createElement('ul');
+
+        allPhones.forEach(phone => {
+          const li = document.createElement('li');
+
+          li.append(phone.name);
+          ul.append(li);
+        });
+
+        document.body.append(ul);
+      });
+  });
